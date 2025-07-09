@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"os"
+	"os/signal"
 	"syscall"
 )
 
@@ -10,7 +12,6 @@ func main() {
 	if err != nil {
 		log.Panic("Socket Error: ", err)
 	}
-	defer syscall.Close(fd)
 	syscall.Connect(fd, &syscall.SockaddrInet4{
 		Port: 8080,
 		Addr: [4]byte{127, 0, 0, 1},
@@ -28,4 +29,8 @@ func main() {
 		return
 	}
 	log.Printf("Received from server: %s", string(buf[:n]))
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	<-sigChan
+	syscall.Close(fd)
 }
